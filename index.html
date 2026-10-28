@@ -3,59 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#000">
+<meta name="theme-color" content="#0b0507">
 <title>Hellcat Sound</title>
 <style>
-html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-user-select:none;user-select:none}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;box-sizing:border-box;text-align:center}
-#speed{font-size:min(38vw,200px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
-#unit{font-size:18px;letter-spacing:.2em;color:#888}
-.row{display:flex;gap:28px;font-size:22px;color:#aaa;font-variant-numeric:tabular-nums}
-.row b{color:#fff;display:block;font-size:30px}
-.row small{font-size:11px;letter-spacing:.15em}
-#bar{width:min(90vw,420px);height:10px;background:#222;border-radius:5px;overflow:hidden}
-#bar i{display:block;height:100%;width:0;background:#e02020}
-#btn{width:150px;height:150px;border-radius:50%;border:5px solid #333;background:#111;color:#fff;font-size:22px;font-weight:700;letter-spacing:.1em;cursor:pointer}
-#btn.on{border-color:#e02020;color:#e02020}
-#btn:disabled{opacity:.5}
-#status{font-size:14px;color:#888;min-height:1.2em}
-.ctl{display:flex;flex-direction:column;gap:6px;width:min(90vw,420px);font-size:13px;color:#aaa}
+html,body{height:100%;margin:0;background:#0b0507;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-user-select:none;user-select:none}
+body{background:radial-gradient(ellipse at 50% 35%,#2a0a0e 0%,#0b0507 70%);display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 16px;box-sizing:border-box}
+.top{width:min(94vw,460px);display:flex;align-items:center;justify-content:space-between}
+.brand{font-size:20px;font-weight:800;letter-spacing:.14em}
+.brand span{color:#e02020;margin-left:6px}
+#btn{width:84px;height:84px;border-radius:50%;border:3px solid #555;background:#141012;color:#ddd;font-size:10px;font-weight:700;letter-spacing:.08em;line-height:1.3;cursor:pointer;padding:0}
+#btn.on{border-color:#e02020;color:#ff5a5a;box-shadow:0 0 18px rgba(224,32,32,.5)}
+#btn:disabled{opacity:.45}
+#gauge{width:min(92vw,430px);height:auto;display:block}
+#status{font-size:13px;color:#8a7c7e;min-height:1.2em}
+.cells{width:min(94vw,460px);display:flex;justify-content:space-around;text-align:center}
+.cell small{display:block;font-size:10px;letter-spacing:.12em;color:#9a8d8f}
+.cell b{display:block;font-size:30px;font-variant-numeric:tabular-nums;margin-top:2px}
+.ctl{display:flex;flex-direction:column;gap:5px;width:min(90vw,420px);font-size:13px;color:#aaa}
 input[type=range]{width:100%;accent-color:#e02020}
 label{display:flex;justify-content:space-between}
 .demo{display:none}.demo.show{display:flex}
-#mode{background:none;border:1px solid #333;color:#888;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
+.btns{display:flex;gap:10px}
+.btns button{background:none;border:1px solid #444;color:#999;border-radius:6px;padding:6px 12px;font-size:13px;cursor:pointer}
+.credit{font-size:10px;color:#5d5254;max-width:90vw;text-align:center}
+.credit a{color:#7a6d70}
 </style>
 </head>
 <body>
-<div id="speed">0</div>
-<div id="unit">MPH</div>
-<div class="row"><div><small>RPM</small><b id="rpm">0</b></div><div><small>GEAR</small><b id="gear">N</b></div><div><small>LOAD</small><b id="thr">0%</b></div></div>
-<div id="bar"><i id="rpmbar"></i></div>
-<button id="btn" type="button" disabled>LOADING</button>
+<div class="top"><div class="brand">HELLCAT<span>SOUND</span></div><button id="btn" type="button" disabled>ENGINE<br>START<br>STOP</button></div>
+<canvas id="gauge" width="760" height="640"></canvas>
 <div id="status">Loading engine sound...</div>
+<div class="cells"><div class="cell"><small>GEAR (SIM.)</small><b id="gear">N</b></div><div class="cell"><small>RPM (SIM.)</small><b id="rpm">0</b></div><div class="cell"><small>LOAD (SIM.)</small><b id="thr">0%</b></div></div>
 <div class="ctl"><label>Volume <span id="volv">80%</span></label><input type="range" id="vol" min="0" max="100" value="80"></div>
-<div class="ctl"><label>Whine <span id="whv">70%</span></label><input type="range" id="wh" min="0" max="100" value="70"></div>
-<div class="ctl"><label>Wind <span id="wdv">60%</span></label><input type="range" id="wd" min="0" max="100" value="60"></div>
+<div class="ctl"><label>Whine <span id="whv">85%</span></label><input type="range" id="wh" min="0" max="100" value="85"></div>
 <div class="ctl demo" id="demobox"><label>Demo speed <span id="demov">0</span></label><input type="range" id="demo" min="0" max="140" value="0"></div>
-<button id="mode" type="button">Switch to demo mode</button>
+<div class="btns"><button id="mode" type="button">Demo mode</button><button id="units" type="button">MPH</button></div>
+<div class="credit">Engine recording: BoilingSand, <a href="https://freesound.org/s/49988/" target="_blank" rel="noopener">freesound.org/s/49988</a>, CC BY 3.0 (trimmed, looped)</div>
 <script>
 (function(){
 "use strict";
 var $=function(id){return document.getElementById(id)};
-var speedEl=$("speed"),rpmEl=$("rpm"),gearEl=$("gear"),thrEl=$("thr"),bar=$("rpmbar"),btn=$("btn"),st=$("status"),demo=$("demo");
-// Hellcat: 8 cyl, 6200 redline. The loop (hellcat-whine.mp3) is the real car near idle; it is pitch-bent with RPM.
-var P={idle:720,redline:6200,clipRpm:750,segA:5.30,segB:8.40,xfade:0.35,gears:[196,133,96,73,57,45]};
-var S={run:false,demo:false,mps:0,tgt:0,rpm:720,gear:1,thr:0,acc:0,prev:0,shiftUntil:0,vol:.8,wh:.7,wd:.6,watch:null,lat:null,lon:null,ft:0,wake:null};
-var A={ctx:null,master:null,n:null,buf:null,raw:null};
+var rpmEl=$("rpm"),gearEl=$("gear"),thrEl=$("thr"),btn=$("btn"),st=$("status"),demo=$("demo"),cv=$("gauge"),g=cv.getContext("2d");
+// engine.wav holds two 4.5 s clips of a real V8: [0-4.5] idle, [4.5-9] steady rev. Each loops and is pitch-bent with RPM.
+var P={idle:720,redline:6200,idleClip:800,revClip:2000,clipLen:4.5,xfade:.3,gears:[196,133,96,73,57,45]};
+var S={run:false,demo:false,kmh:false,mps:0,tgt:0,rpm:720,gear:1,thr:0,acc:0,prev:0,shiftUntil:0,vol:.8,wh:.85,watch:null,lat:null,lon:null,ft:0,wake:null};
+var A={ctx:null,master:null,n:null,idleBuf:null,revBuf:null,raw:null};
 
-// Preload the sample bytes right away, decode once audio is unlocked
-fetch("hellcat-whine.mp3").then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(function(ab){A.raw=ab;btn.disabled=false;btn.textContent="START";st.textContent="Ready"}).catch(function(e){st.textContent="Could not load engine sound ("+e.message+")"});
+fetch("engine.wav").then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(function(ab){A.raw=ab;btn.disabled=false;st.textContent="Ready. Tap ENGINE START."}).catch(function(e){st.textContent="Could not load engine sound ("+e.message+")"});
 
 $("vol").oninput=function(){S.vol=this.value/100;$("volv").textContent=this.value+"%";if(A.master)A.master.gain.setTargetAtTime(S.vol,A.ctx.currentTime,.05)};
 $("wh").oninput=function(){S.wh=this.value/100;$("whv").textContent=this.value+"%"};
-$("wd").oninput=function(){S.wd=this.value/100;$("wdv").textContent=this.value+"%"};
 demo.oninput=function(){$("demov").textContent=this.value};
-$("mode").onclick=function(){S.demo=!S.demo;$("demobox").classList.toggle("show",S.demo);this.textContent=S.demo?"Switch to GPS mode":"Switch to demo mode";if(S.run){if(S.demo){stopGps();st.textContent="Demo mode"}else startGps()}};
+$("units").onclick=function(){S.kmh=!S.kmh;this.textContent=S.kmh?"KM/H":"MPH"};
+$("mode").onclick=function(){S.demo=!S.demo;$("demobox").classList.toggle("show",S.demo);this.textContent=S.demo?"GPS mode":"Demo mode";if(S.run){if(S.demo){stopGps();st.textContent="Demo mode"}else startGps()}};
 
 function hav(a,b,c,d){var R=6371000,r=Math.PI/180,dl=(c-a)*r,dn=(d-b)*r,h=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dn/2)*Math.sin(dn/2);return 2*R*Math.asin(Math.sqrt(h))}
 function startGps(){
@@ -72,48 +72,51 @@ function startGps(){
 function stopGps(){if(S.watch!==null){navigator.geolocation.clearWatch(S.watch);S.watch=null}}
 
 function noise(ctx){var len=ctx.sampleRate*2,b=ctx.createBuffer(1,len,ctx.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=Math.random()*2-1;return b}
+// Take seconds [a,b] of the clip and crossfade its tail into its head so it loops without a click
+function makeLoop(ctx,src,a,b){
+ var sr=src.sampleRate,s0=Math.floor(a*sr),s1=Math.min(src.length,Math.floor(b*sr)),n=s1-s0,xf=Math.floor(P.xfade*sr);
+ var out=ctx.createBuffer(1,n-xf,sr),d=src.getChannelData(0),o=out.getChannelData(0);
+ for(var i=0;i<xf;i++){var t=(i/xf)*Math.PI/2;o[i]=d[s1-xf+i]*Math.cos(t)+d[s0+i]*Math.sin(t)}
+ for(var j=xf;j<n-xf;j++)o[j]=d[s0+j];
+ return out;
+}
 function build(){
  var ctx=A.ctx,all=[],N={all:all};
  var out=ctx.createGain();out.gain.value=0;out.connect(A.master);
- // real engine loop
- var src=ctx.createBufferSource();src.buffer=A.buf;src.loop=true;
- var eg=ctx.createGain();eg.gain.value=.9;
  var shelf=ctx.createBiquadFilter();shelf.type="highshelf";shelf.frequency.value=1500;shelf.gain.value=0;
- var lowb=ctx.createBiquadFilter();lowb.type="lowshelf";lowb.frequency.value=140;lowb.gain.value=6;
- src.connect(eg);eg.connect(shelf);shelf.connect(lowb);lowb.connect(out);src.start();all.push(src);
- // extra supercharger whine, tracks rpm
+ var lowb=ctx.createBiquadFilter();lowb.type="lowshelf";lowb.frequency.value=140;lowb.gain.value=5;
+ shelf.connect(lowb);lowb.connect(out);
+ // idle loop and rev loop, crossfaded by rpm
+ var si=ctx.createBufferSource();si.buffer=A.idleBuf;si.loop=true;var gi=ctx.createGain();gi.gain.value=1;si.connect(gi);gi.connect(shelf);si.start();all.push(si);
+ var sv=ctx.createBufferSource();sv.buffer=A.revBuf;sv.loop=true;var gv=ctx.createGain();gv.gain.value=0;sv.connect(gv);gv.connect(shelf);sv.start();all.push(sv);
+ // supercharger whine
  var w=ctx.createOscillator(),wg=ctx.createGain();w.type="sawtooth";wg.gain.value=0;
- var wf=ctx.createBiquadFilter();wf.type="bandpass";wf.Q.value=6;w.connect(wf);wf.connect(wg);wg.connect(out);w.start();all.push(w);
- var w2=ctx.createOscillator(),w2g=ctx.createGain();w2.type="sine";w2g.gain.value=0;w2.connect(w2g);w2g.connect(out);w2.start();all.push(w2);
- // wind
- var nb=noise(ctx);
- var wn=ctx.createBufferSource();wn.buffer=nb;wn.loop=true;var wnf=ctx.createBiquadFilter();wnf.type="lowpass";wnf.frequency.value=300;wnf.Q.value=.5;var wng=ctx.createGain();wng.gain.value=0;wn.connect(wnf);wnf.connect(wng);wng.connect(A.master);wn.start();all.push(wn);
+ var wf=ctx.createBiquadFilter();wf.type="bandpass";wf.Q.value=7;w.connect(wf);wf.connect(wg);wg.connect(out);w.start();all.push(w);
+ var w2=ctx.createOscillator(),w2g=ctx.createGain();w2.type="square";w2g.gain.value=0;var w2f=ctx.createBiquadFilter();w2f.type="bandpass";w2f.Q.value=9;w2.connect(w2f);w2f.connect(w2g);w2g.connect(out);w2.start();all.push(w2);
  // overrun pops
- var pn=ctx.createBufferSource();pn.buffer=nb;pn.loop=true;var pf=ctx.createBiquadFilter();pf.type="bandpass";pf.frequency.value=700;pf.Q.value=1;var pg=ctx.createGain();pg.gain.value=0;pn.connect(pf);pf.connect(pg);pg.connect(out);pn.start();all.push(pn);
- N.out=out;N.src=src;N.eg=eg;N.shelf=shelf;N.w=w;N.wf=wf;N.wg=wg;N.w2=w2;N.w2g=w2g;N.wnf=wnf;N.wng=wng;N.pg=pg;
+ var pn=ctx.createBufferSource();pn.buffer=noise(ctx);pn.loop=true;var pf=ctx.createBiquadFilter();pf.type="bandpass";pf.frequency.value=700;pf.Q.value=1;var pg=ctx.createGain();pg.gain.value=0;pn.connect(pf);pf.connect(pg);pg.connect(out);pn.start();all.push(pn);
+ N.out=out;N.shelf=shelf;N.si=si;N.sv=sv;N.gi=gi;N.gv=gv;N.w=w;N.wf=wf;N.wg=wg;N.w2=w2;N.w2f=w2f;N.w2g=w2g;N.pg=pg;
  A.n=N;
 }
 function teardown(){if(!A.n)return;A.n.all.forEach(function(n){try{n.stop()}catch(e){}try{n.disconnect()}catch(e){}});A.n=null}
+function clamp(x,a,b){return x<a?a:x>b?b:x}
 function synth(dt){
- var N=A.n;if(!N)return;var t=A.ctx.currentTime,ty=.05,thr=S.thr;
- var r=S.rpm/P.clipRpm;
- var rate=Math.min(3.2,Math.pow(r,.5));              // pitch bend of the real loop
- N.src.playbackRate.setTargetAtTime(rate,t,ty);
- var load=Math.min(1,(S.rpm-P.idle)/(P.redline-P.idle));
- N.eg.gain.setTargetAtTime(.75+load*.35+thr*.25,t,ty);
- N.shelf.gain.setTargetAtTime(thr*6+load*4,t,ty);     // brighter under load
- // whine: the loop's own whine sits near 700 Hz at idle; add a layer that follows it up
- var whz=Math.min(6000,700*rate);
- var wlev=S.wh*(.02+thr*.10+load*.06);
- N.w.frequency.setTargetAtTime(whz,t,ty);N.wf.frequency.setTargetAtTime(whz,t,ty);
- N.wg.gain.setTargetAtTime(wlev,t,.15);
- N.w2.frequency.setTargetAtTime(whz*2,t,ty);N.w2g.gain.setTargetAtTime(wlev*.35,t,.15);
- // wind grows with speed
- var mph=S.mps*2.237,ws=Math.min(1,mph/110);
- N.wnf.frequency.setTargetAtTime(250+ws*ws*3000,t,.3);
- N.wng.gain.setTargetAtTime(S.wd*ws*ws*.9,t,.3);
+ var N=A.n;if(!N)return;var t=A.ctx.currentTime,ty=.05,thr=S.thr,rpm=S.rpm;
+ N.si.playbackRate.setTargetAtTime(clamp(rpm/P.idleClip,.8,2),t,ty);
+ N.sv.playbackRate.setTargetAtTime(clamp(rpm/P.revClip,.55,3.2),t,ty);
+ var x=clamp((rpm-950)/900,0,1);                       // 0 = pure idle, 1 = pure rev loop
+ var load=clamp((rpm-P.idle)/(P.redline-P.idle),0,1);
+ var lvl=.55+load*.4+thr*.3;
+ N.gi.gain.setTargetAtTime(Math.cos(x*Math.PI/2)*lvl,t,ty);
+ N.gv.gain.setTargetAtTime(Math.sin(x*Math.PI/2)*lvl*.9,t,ty);
+ N.shelf.gain.setTargetAtTime(thr*7+load*4,t,ty);
+ // aggressive supercharger whine: follows rpm, louder on throttle
+ var whz=clamp(900+rpm*1.15,900,7200);
+ var wlev=S.wh*(.025+thr*.20+load*.10);
+ N.w.frequency.setTargetAtTime(whz,t,ty);N.wf.frequency.setTargetAtTime(whz,t,ty);N.wg.gain.setTargetAtTime(wlev,t,.12);
+ N.w2.frequency.setTargetAtTime(whz*1.5,t,ty);N.w2f.frequency.setTargetAtTime(whz*1.5,t,ty);N.w2g.gain.setTargetAtTime(wlev*.35,t,.12);
  // pops on lift-off
- var decel=thr<.05&&S.rpm>2200;
+ var decel=thr<.05&&rpm>2200;
  if(decel&&Math.random()<dt*9){N.pg.gain.setValueAtTime(.5,t);N.pg.gain.setTargetAtTime(0,t+.012,.03)}
  N.out.gain.setTargetAtTime(1,t,ty);
 }
@@ -125,6 +128,7 @@ function sim(dt){
  S.acc+=(acc-S.acc)*(1-Math.exp(-dt*3));
  var mph=S.mps*2.237,now=performance.now();
  var thr=.08+Math.min(.25,mph/400)+S.acc*.45;if(S.acc<-.3)thr=0;thr=Math.max(0,Math.min(1,thr));
+ if(mph<.5)thr=0;
  var rpmIn=function(g){return P.idle+mph*P.gears[g-1]};
  var upAt=P.redline-400-(1-thr)*2000,downAt=P.idle+900;
  if(now>S.shiftUntil){
@@ -133,10 +137,34 @@ function sim(dt){
  }
  var cut=now<S.shiftUntil;if(cut)thr*=.15;
  S.thr+=(thr-S.thr)*(1-Math.exp(-dt*(cut?25:7)));
- var target=mph<.5?P.idle+Math.sin(now/180)*20:rpmIn(S.gear);
+ var target=mph<.5?P.idle:rpmIn(S.gear);
  if(cut)target*=.86;
  target=Math.max(P.idle*.95,Math.min(P.redline+150,target));
  S.rpm+=(target-S.rpm)*(1-Math.exp(-dt*(cut?18:5)));
+}
+
+// Dial: RPM 0-8 (x1000) with needle, speed in the middle
+function arc(cx,cy,r,a,b){g.beginPath();g.arc(cx,cy,r,a,b);g.stroke()}
+function draw(){
+ var cx=380,cy=300,R=290,a0=.75*Math.PI,sw=1.5*Math.PI,fr=clamp(S.rpm/8000,0,1);
+ g.clearRect(0,0,760,640);
+ g.lineCap="round";g.lineWidth=16;
+ g.strokeStyle="#2b1114";arc(cx,cy,R,a0,a0+sw);
+ g.strokeStyle="#6b1519";arc(cx,cy,R,a0+sw*6.2/8,a0+sw);
+ g.strokeStyle="#e02020";arc(cx,cy,R,a0,a0+sw*fr);
+ g.textAlign="center";g.textBaseline="middle";
+ for(var i=0;i<=8;i++){
+  var an=a0+sw*i/8,c=Math.cos(an),s=Math.sin(an);
+  g.strokeStyle=i>=7?"#ff4a4a":"#b8aaac";g.lineWidth=5;g.beginPath();g.moveTo(cx+c*(R-34),cy+s*(R-34));g.lineTo(cx+c*(R-56),cy+s*(R-56));g.stroke();
+  g.fillStyle=i>=7?"#ff4a4a":"#d8cdcf";g.font="600 34px system-ui,Arial,sans-serif";g.fillText(i,cx+c*(R-92),cy+s*(R-92));
+  if(i<8){for(var k=1;k<4;k++){var am=a0+sw*(i+k/4)/8,cm=Math.cos(am),sm=Math.sin(am);g.strokeStyle="#6e6264";g.lineWidth=2.5;g.beginPath();g.moveTo(cx+cm*(R-34),cy+sm*(R-34));g.lineTo(cx+cm*(R-46),cy+sm*(R-46));g.stroke()}}
+ }
+ var na=a0+sw*fr;g.strokeStyle="#ff2a2a";g.lineWidth=8;g.beginPath();g.moveTo(cx-Math.cos(na)*24,cy-Math.sin(na)*24);g.lineTo(cx+Math.cos(na)*(R-70),cy+Math.sin(na)*(R-70));g.stroke();
+ g.fillStyle="#150b0d";g.strokeStyle="#ff2a2a";g.lineWidth=5;g.beginPath();g.arc(cx,cy,20,0,7);g.fill();g.stroke();
+ var sp=Math.round(S.mps*(S.kmh?3.6:2.237));
+ g.fillStyle="#fff";g.font="800 150px system-ui,Arial,sans-serif";g.fillText(sp,cx,cy+170);
+ g.fillStyle="#b8aaac";g.font="600 30px system-ui,Arial,sans-serif";g.fillText(S.kmh?"KM/H":"MPH",cx,cy+262);
+ g.fillStyle="#6e6264";g.font="500 22px system-ui,Arial,sans-serif";g.fillText("GPS speed   x1000 RPM",cx,cy+300);
 }
 
 var last=performance.now(),frame=0;
@@ -144,38 +172,26 @@ function loop(){
  var now=performance.now(),dt=Math.min(.1,(now-last)/1000);last=now;
  sim(dt);if(S.run)synth(dt);
  if((frame++&1)===0){
-  speedEl.textContent=Math.round(S.mps*2.237);
-  rpmEl.textContent=Math.round(S.rpm/10)*10;
+  rpmEl.textContent=Math.round(S.rpm).toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
   gearEl.textContent=S.mps<.3?"N":S.gear;
   thrEl.textContent=Math.round(S.thr*100)+"%";
-  bar.style.width=(Math.min(1,S.rpm/(P.redline+300))*100)+"%";
+  draw();
  }
  requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
-// Cut the steady section out of the clip and crossfade its tail into its head so it loops without a click
-function makeLoop(ctx,src){
- var sr=src.sampleRate,a=Math.floor(P.segA*sr),b=Math.min(src.length,Math.floor(P.segB*sr)),n=b-a,xf=Math.floor(P.xfade*sr);
- var ch=src.numberOfChannels,out=ctx.createBuffer(ch,n-xf,sr),peak=0;
- for(var c=0;c<ch;c++){var d=src.getChannelData(c),o=out.getChannelData(c);
-  for(var i=0;i<xf;i++){var t=(i/xf)*Math.PI/2;o[i]=d[b-xf+i]*Math.cos(t)+d[a+i]*Math.sin(t)}
-  for(var j=xf;j<n-xf;j++)o[j]=d[a+j];
-  for(var k=0;k<o.length;k++)peak=Math.max(peak,Math.abs(o[k]))}
- var g=peak>0?.95/peak:1;for(var c2=0;c2<ch;c2++){var o2=out.getChannelData(c2);for(var m=0;m<o2.length;m++)o2[m]*=g}
- return out;
-}
 function start(){
  if(!A.raw){st.textContent="Sound not loaded yet";return}
  if(!A.ctx){var AC=window.AudioContext||window.webkitAudioContext;A.ctx=new AC({latencyHint:"interactive"});A.master=A.ctx.createGain();A.master.gain.value=0;var comp=A.ctx.createDynamicsCompressor();comp.threshold.value=-10;comp.ratio.value=3;A.master.connect(comp);comp.connect(A.ctx.destination)}
- var go=function(){build();A.master.gain.setTargetAtTime(S.vol,A.ctx.currentTime,.3);S.run=true;btn.className="on";btn.textContent="STOP";
+ var go=function(){build();A.master.gain.setTargetAtTime(S.vol,A.ctx.currentTime,.3);S.run=true;btn.className="on";
   if(S.demo)st.textContent="Demo mode";else startGps();
   if(navigator.wakeLock)navigator.wakeLock.request("screen").then(function(w){S.wake=w}).catch(function(){})};
- var ready=function(){if(A.buf)go();else A.ctx.decodeAudioData(A.raw.slice(0),function(b){A.buf=makeLoop(A.ctx,b);go()},function(){st.textContent="Could not decode engine sound"})};
+ var ready=function(){if(A.idleBuf)go();else A.ctx.decodeAudioData(A.raw.slice(0),function(b){A.idleBuf=makeLoop(A.ctx,b,0,P.clipLen);A.revBuf=makeLoop(A.ctx,b,P.clipLen,P.clipLen*2);go()},function(){st.textContent="Could not decode engine sound"})};
  if(A.ctx.state==="suspended")A.ctx.resume().then(ready);else ready();
 }
 function stop(){
- S.run=false;btn.className="";btn.textContent="START";
+ S.run=false;btn.className="";
  if(A.master)A.master.gain.setTargetAtTime(0,A.ctx.currentTime,.15);
  setTimeout(teardown,500);stopGps();st.textContent="Stopped";S.tgt=0;
  if(S.wake){try{S.wake.release()}catch(e){}S.wake=null}
