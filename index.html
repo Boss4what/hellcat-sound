@@ -7,7 +7,7 @@
 <title>Hellcat Sound</title>
 <style>
 html,body{height:100%;margin:0;background:#000;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-user-select:none;user-select:none}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;box-sizing:border-box;text-align:center}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;box-sizing:border-box;text-align:center}
 #speed{font-size:min(38vw,200px);font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 #unit{font-size:18px;letter-spacing:.2em;color:#888}
 .row{display:flex;gap:28px;font-size:22px;color:#aaa;font-variant-numeric:tabular-nums}
@@ -17,6 +17,7 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
 #bar i{display:block;height:100%;width:0;background:#e02020}
 #btn{width:150px;height:150px;border-radius:50%;border:5px solid #333;background:#111;color:#fff;font-size:22px;font-weight:700;letter-spacing:.1em;cursor:pointer}
 #btn.on{border-color:#e02020;color:#e02020}
+#btn:disabled{opacity:.5}
 #status{font-size:14px;color:#888;min-height:1.2em}
 .ctl{display:flex;flex-direction:column;gap:6px;width:min(90vw,420px);font-size:13px;color:#aaa}
 input[type=range]{width:100%;accent-color:#e02020}
@@ -30,10 +31,11 @@ label{display:flex;justify-content:space-between}
 <div id="unit">MPH</div>
 <div class="row"><div><small>RPM</small><b id="rpm">0</b></div><div><small>GEAR</small><b id="gear">N</b></div><div><small>LOAD</small><b id="thr">0%</b></div></div>
 <div id="bar"><i id="rpmbar"></i></div>
-<button id="btn" type="button">START</button>
-<div id="status">GPS idle</div>
-<div class="ctl"><label>Volume <span id="volv">70%</span></label><input type="range" id="vol" min="0" max="100" value="70"></div>
-<div class="ctl"><label>Aggression <span id="aggv">60%</span></label><input type="range" id="agg" min="0" max="100" value="60"></div>
+<button id="btn" type="button" disabled>LOADING</button>
+<div id="status">Loading engine sound...</div>
+<div class="ctl"><label>Volume <span id="volv">80%</span></label><input type="range" id="vol" min="0" max="100" value="80"></div>
+<div class="ctl"><label>Whine <span id="whv">70%</span></label><input type="range" id="wh" min="0" max="100" value="70"></div>
+<div class="ctl"><label>Wind <span id="wdv">60%</span></label><input type="range" id="wd" min="0" max="100" value="60"></div>
 <div class="ctl demo" id="demobox"><label>Demo speed <span id="demov">0</span></label><input type="range" id="demo" min="0" max="140" value="0"></div>
 <button id="mode" type="button">Switch to demo mode</button>
 <script>
@@ -41,13 +43,17 @@ label{display:flex;justify-content:space-between}
 "use strict";
 var $=function(id){return document.getElementById(id)};
 var speedEl=$("speed"),rpmEl=$("rpm"),gearEl=$("gear"),thrEl=$("thr"),bar=$("rpmbar"),btn=$("btn"),st=$("status"),demo=$("demo");
-// Hellcat-style supercharged 6.2L V8: 8 cylinders, ~700 rpm idle, 6200 redline, heavy blower whine
-var P={cyl:8,idle:720,redline:6200,gears:[196,133,96,73,57,45]};
-var S={run:false,demo:false,mps:0,tgt:0,rpm:720,gear:1,thr:0,acc:0,prev:0,shiftUntil:0,vol:.7,agg:.6,watch:null,lat:null,lon:null,ft:0,wake:null};
-var A={ctx:null,master:null,n:null};
+// Hellcat: 8 cyl, 6200 redline. The loop (hellcat-whine.mp3) is the real car near idle; it is pitch-bent with RPM.
+var P={idle:720,redline:6200,clipRpm:750,segA:5.30,segB:8.40,xfade:0.35,gears:[196,133,96,73,57,45]};
+var S={run:false,demo:false,mps:0,tgt:0,rpm:720,gear:1,thr:0,acc:0,prev:0,shiftUntil:0,vol:.8,wh:.7,wd:.6,watch:null,lat:null,lon:null,ft:0,wake:null};
+var A={ctx:null,master:null,n:null,buf:null,raw:null};
+
+// Preload the sample bytes right away, decode once audio is unlocked
+fetch("hellcat-whine.mp3").then(function(r){if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(function(ab){A.raw=ab;btn.disabled=false;btn.textContent="START";st.textContent="Ready"}).catch(function(e){st.textContent="Could not load engine sound ("+e.message+")"});
 
 $("vol").oninput=function(){S.vol=this.value/100;$("volv").textContent=this.value+"%";if(A.master)A.master.gain.setTargetAtTime(S.vol,A.ctx.currentTime,.05)};
-$("agg").oninput=function(){S.agg=this.value/100;$("aggv").textContent=this.value+"%"};
+$("wh").oninput=function(){S.wh=this.value/100;$("whv").textContent=this.value+"%"};
+$("wd").oninput=function(){S.wd=this.value/100;$("wdv").textContent=this.value+"%"};
 demo.oninput=function(){$("demov").textContent=this.value};
 $("mode").onclick=function(){S.demo=!S.demo;$("demobox").classList.toggle("show",S.demo);this.textContent=S.demo?"Switch to GPS mode":"Switch to demo mode";if(S.run){if(S.demo){stopGps();st.textContent="Demo mode"}else startGps()}};
 
@@ -65,44 +71,51 @@ function startGps(){
 }
 function stopGps(){if(S.watch!==null){navigator.geolocation.clearWatch(S.watch);S.watch=null}}
 
-var distCache={};
-function dist(a){var k=Math.round(a*20)/20;if(distCache[k])return distCache[k];var n=1024,c=new Float32Array(n),kk=k*60+1;for(var i=0;i<n;i++){var x=i*2/n-1;c[i]=(1+kk)*x/(1+kk*Math.abs(x))}return distCache[k]=c}
+function noise(ctx){var len=ctx.sampleRate*2,b=ctx.createBuffer(1,len,ctx.sampleRate),d=b.getChannelData(0);for(var i=0;i<len;i++)d[i]=Math.random()*2-1;return b}
 function build(){
  var ctx=A.ctx,all=[],N={all:all};
  var out=ctx.createGain();out.gain.value=0;out.connect(A.master);
- var ws=ctx.createWaveShaper();ws.curve=dist(.6);ws.oversample="2x";
- var lp=ctx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=600;lp.Q.value=.9;
- var pk=ctx.createBiquadFilter();pk.type="peaking";pk.frequency.value=160;pk.gain.value=9;pk.Q.value=1.2;
- ws.connect(lp);lp.connect(pk);pk.connect(out);
- var mix=ctx.createGain();mix.gain.value=.35;mix.connect(ws);
- N.osc=[["sawtooth",1,.9],["square",.5,.6],["sawtooth",2,.3],["sawtooth",3,.15],["sawtooth",1.5,.12]].map(function(s){var o=ctx.createOscillator(),g=ctx.createGain();o.type=s[0];g.gain.value=s[2];o.connect(g);g.connect(mix);o.start();all.push(o);return{o:o,m:s[1]}});
- var lope=ctx.createOscillator(),lg=ctx.createGain();lg.gain.value=0;lope.connect(lg);lg.connect(mix.gain);lope.start();all.push(lope);
- var len=ctx.sampleRate*2,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0);for(var i=0;i<len;i++)d[i]=Math.random()*2-1;
- var ns=ctx.createBufferSource();ns.buffer=buf;ns.loop=true;var nb=ctx.createBiquadFilter();nb.type="bandpass";nb.frequency.value=900;nb.Q.value=.8;var ng=ctx.createGain();ng.gain.value=0;ns.connect(nb);nb.connect(ng);ng.connect(ws);ns.start();all.push(ns);
- // supercharger whine: two tones, pitch tracks rpm, level tracks load
- var w=ctx.createOscillator(),wg=ctx.createGain();w.type="sine";wg.gain.value=0;w.connect(wg);wg.connect(out);w.start();all.push(w);
- var w2=ctx.createOscillator(),w2g=ctx.createGain();w2.type="triangle";w2g.gain.value=0;w2.connect(w2g);w2g.connect(out);w2.start();all.push(w2);
- N.out=out;N.ws=ws;N.lp=lp;N.lope=lope;N.lg=lg;N.nb=nb;N.ng=ng;N.w=w;N.wg=wg;N.w2=w2;N.w2g=w2g;N.lastThr=0;
+ // real engine loop
+ var src=ctx.createBufferSource();src.buffer=A.buf;src.loop=true;
+ var eg=ctx.createGain();eg.gain.value=.9;
+ var shelf=ctx.createBiquadFilter();shelf.type="highshelf";shelf.frequency.value=1500;shelf.gain.value=0;
+ var lowb=ctx.createBiquadFilter();lowb.type="lowshelf";lowb.frequency.value=140;lowb.gain.value=6;
+ src.connect(eg);eg.connect(shelf);shelf.connect(lowb);lowb.connect(out);src.start();all.push(src);
+ // extra supercharger whine, tracks rpm
+ var w=ctx.createOscillator(),wg=ctx.createGain();w.type="sawtooth";wg.gain.value=0;
+ var wf=ctx.createBiquadFilter();wf.type="bandpass";wf.Q.value=6;w.connect(wf);wf.connect(wg);wg.connect(out);w.start();all.push(w);
+ var w2=ctx.createOscillator(),w2g=ctx.createGain();w2.type="sine";w2g.gain.value=0;w2.connect(w2g);w2g.connect(out);w2.start();all.push(w2);
+ // wind
+ var nb=noise(ctx);
+ var wn=ctx.createBufferSource();wn.buffer=nb;wn.loop=true;var wnf=ctx.createBiquadFilter();wnf.type="lowpass";wnf.frequency.value=300;wnf.Q.value=.5;var wng=ctx.createGain();wng.gain.value=0;wn.connect(wnf);wnf.connect(wng);wng.connect(A.master);wn.start();all.push(wn);
+ // overrun pops
+ var pn=ctx.createBufferSource();pn.buffer=nb;pn.loop=true;var pf=ctx.createBiquadFilter();pf.type="bandpass";pf.frequency.value=700;pf.Q.value=1;var pg=ctx.createGain();pg.gain.value=0;pn.connect(pf);pf.connect(pg);pg.connect(out);pn.start();all.push(pn);
+ N.out=out;N.src=src;N.eg=eg;N.shelf=shelf;N.w=w;N.wf=wf;N.wg=wg;N.w2=w2;N.w2g=w2g;N.wnf=wnf;N.wng=wng;N.pg=pg;
  A.n=N;
 }
 function teardown(){if(!A.n)return;A.n.all.forEach(function(n){try{n.stop()}catch(e){}try{n.disconnect()}catch(e){}});A.n=null}
 function synth(dt){
- var N=A.n;if(!N)return;var t=A.ctx.currentTime,ty=.04,thr=S.thr,ag=S.agg;
- var fire=S.rpm/60*(P.cyl/2);
- N.osc.forEach(function(s){s.o.frequency.setTargetAtTime(fire*s.m,t,ty)});
- N.lp.frequency.setTargetAtTime(Math.min(9000,350+thr*(1800+2200*ag)+S.rpm*.12),t,ty);
- N.ws.curve=dist(.25+ag*.6+thr*.3);
- var idleF=Math.max(0,1-(S.rpm-P.idle)/1500);
- N.lope.frequency.setTargetAtTime(fire/4,t,ty);N.lg.gain.setTargetAtTime(.3*idleF*.5,t,ty);
- N.nb.frequency.setTargetAtTime(600+fire*4,t,ty);
- var decel=thr<.05&&S.rpm>2500;
- N.ng.gain.setTargetAtTime(thr*.35*(.4+ag)+(decel?.14:0),t,ty);
- if(decel&&Math.random()<dt*10){N.ng.gain.setValueAtTime(.6,t);N.ng.gain.setTargetAtTime(.1,t+.01,.03)}
- var boost=Math.min(1,thr*1.3)*Math.min(1,S.rpm/3500),wf=500+S.rpm*.9;
- N.w.frequency.setTargetAtTime(wf,t,.25);N.w2.frequency.setTargetAtTime(wf*2.02,t,.25);
- N.wg.gain.setTargetAtTime(boost*.07,t,.2);N.w2g.gain.setTargetAtTime(boost*.025,t,.2);
- N.out.gain.setTargetAtTime(.28+Math.min(1,(S.rpm-P.idle)/(P.redline-P.idle))*.45+thr*.25,t,ty);
- N.lastThr=thr;
+ var N=A.n;if(!N)return;var t=A.ctx.currentTime,ty=.05,thr=S.thr;
+ var r=S.rpm/P.clipRpm;
+ var rate=Math.min(3.2,Math.pow(r,.5));              // pitch bend of the real loop
+ N.src.playbackRate.setTargetAtTime(rate,t,ty);
+ var load=Math.min(1,(S.rpm-P.idle)/(P.redline-P.idle));
+ N.eg.gain.setTargetAtTime(.75+load*.35+thr*.25,t,ty);
+ N.shelf.gain.setTargetAtTime(thr*6+load*4,t,ty);     // brighter under load
+ // whine: the loop's own whine sits near 700 Hz at idle; add a layer that follows it up
+ var whz=Math.min(6000,700*rate);
+ var wlev=S.wh*(.02+thr*.10+load*.06);
+ N.w.frequency.setTargetAtTime(whz,t,ty);N.wf.frequency.setTargetAtTime(whz,t,ty);
+ N.wg.gain.setTargetAtTime(wlev,t,.15);
+ N.w2.frequency.setTargetAtTime(whz*2,t,ty);N.w2g.gain.setTargetAtTime(wlev*.35,t,.15);
+ // wind grows with speed
+ var mph=S.mps*2.237,ws=Math.min(1,mph/110);
+ N.wnf.frequency.setTargetAtTime(250+ws*ws*3000,t,.3);
+ N.wng.gain.setTargetAtTime(S.wd*ws*ws*.9,t,.3);
+ // pops on lift-off
+ var decel=thr<.05&&S.rpm>2200;
+ if(decel&&Math.random()<dt*9){N.pg.gain.setValueAtTime(.5,t);N.pg.gain.setTargetAtTime(0,t+.012,.03)}
+ N.out.gain.setTargetAtTime(1,t,ty);
 }
 
 function sim(dt){
@@ -120,7 +133,7 @@ function sim(dt){
  }
  var cut=now<S.shiftUntil;if(cut)thr*=.15;
  S.thr+=(thr-S.thr)*(1-Math.exp(-dt*(cut?25:7)));
- var target=mph<.5?P.idle+Math.sin(now/180)*25:rpmIn(S.gear);
+ var target=mph<.5?P.idle+Math.sin(now/180)*20:rpmIn(S.gear);
  if(cut)target*=.86;
  target=Math.max(P.idle*.95,Math.min(P.redline+150,target));
  S.rpm+=(target-S.rpm)*(1-Math.exp(-dt*(cut?18:5)));
@@ -130,7 +143,7 @@ var last=performance.now(),frame=0;
 function loop(){
  var now=performance.now(),dt=Math.min(.1,(now-last)/1000);last=now;
  sim(dt);if(S.run)synth(dt);
- if((frame++&1)===0){ // update text every other frame to keep it light
+ if((frame++&1)===0){
   speedEl.textContent=Math.round(S.mps*2.237);
   rpmEl.textContent=Math.round(S.rpm/10)*10;
   gearEl.textContent=S.mps<.3?"N":S.gear;
@@ -141,17 +154,30 @@ function loop(){
 }
 requestAnimationFrame(loop);
 
+// Cut the steady section out of the clip and crossfade its tail into its head so it loops without a click
+function makeLoop(ctx,src){
+ var sr=src.sampleRate,a=Math.floor(P.segA*sr),b=Math.min(src.length,Math.floor(P.segB*sr)),n=b-a,xf=Math.floor(P.xfade*sr);
+ var ch=src.numberOfChannels,out=ctx.createBuffer(ch,n-xf,sr),peak=0;
+ for(var c=0;c<ch;c++){var d=src.getChannelData(c),o=out.getChannelData(c);
+  for(var i=0;i<xf;i++){var t=(i/xf)*Math.PI/2;o[i]=d[b-xf+i]*Math.cos(t)+d[a+i]*Math.sin(t)}
+  for(var j=xf;j<n-xf;j++)o[j]=d[a+j];
+  for(var k=0;k<o.length;k++)peak=Math.max(peak,Math.abs(o[k]))}
+ var g=peak>0?.95/peak:1;for(var c2=0;c2<ch;c2++){var o2=out.getChannelData(c2);for(var m=0;m<o2.length;m++)o2[m]*=g}
+ return out;
+}
 function start(){
- if(!A.ctx){var AC=window.AudioContext||window.webkitAudioContext;A.ctx=new AC({latencyHint:"interactive"});A.master=A.ctx.createGain();A.master.gain.value=0;var comp=A.ctx.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;A.master.connect(comp);comp.connect(A.ctx.destination)}
+ if(!A.raw){st.textContent="Sound not loaded yet";return}
+ if(!A.ctx){var AC=window.AudioContext||window.webkitAudioContext;A.ctx=new AC({latencyHint:"interactive"});A.master=A.ctx.createGain();A.master.gain.value=0;var comp=A.ctx.createDynamicsCompressor();comp.threshold.value=-10;comp.ratio.value=3;A.master.connect(comp);comp.connect(A.ctx.destination)}
  var go=function(){build();A.master.gain.setTargetAtTime(S.vol,A.ctx.currentTime,.3);S.run=true;btn.className="on";btn.textContent="STOP";
   if(S.demo)st.textContent="Demo mode";else startGps();
   if(navigator.wakeLock)navigator.wakeLock.request("screen").then(function(w){S.wake=w}).catch(function(){})};
- if(A.ctx.state==="suspended")A.ctx.resume().then(go);else go();
+ var ready=function(){if(A.buf)go();else A.ctx.decodeAudioData(A.raw.slice(0),function(b){A.buf=makeLoop(A.ctx,b);go()},function(){st.textContent="Could not decode engine sound"})};
+ if(A.ctx.state==="suspended")A.ctx.resume().then(ready);else ready();
 }
 function stop(){
  S.run=false;btn.className="";btn.textContent="START";
  if(A.master)A.master.gain.setTargetAtTime(0,A.ctx.currentTime,.15);
- setTimeout(teardown,500);stopGps();st.textContent="GPS idle";S.tgt=0;
+ setTimeout(teardown,500);stopGps();st.textContent="Stopped";S.tgt=0;
  if(S.wake){try{S.wake.release()}catch(e){}S.wake=null}
 }
 btn.onclick=function(){S.run?stop():start()};
